@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  vpn_wireguard:
+    image: qmcgaw/gluetun
+    container_name: gluetun_vpn
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "34400:34400" # Exposición del puerto de Threadfin a través del túnel VPN
+    environment:
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=wireguard
+      # REQUIERE ACCIÓN: Añade aquí tu endpoint, public key y private key del proveedor VPN
+    restart: unless-stopped
+
+  proxy_threadfin:
+    image: fyb3roptik/threadfin:latest
+    container_name: threadfin
+    network_mode: "service:vpn_wireguard" # Obliga a Threadfin a salir a internet por la VPN
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+    volumes:
+      - ./conf:/home/threadfin/conf
+      - ./temp:/tmp/xteve
+    depends_on:
+      - vpn_wireguard
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 450M # Evita el OOM Kill en la Pi 3B al cargar listas EPG
+    restart: unless-stopped

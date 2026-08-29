@@ -1,0 +1,24 @@
+---
+- name: Despliegue de Proxy IPTV y VPN en Raspberry Pi 3B
+  hosts: proxy_iptv
+  become: yes
+  tasks:
+    - name: Garantizar que el directorio del proyecto existe
+      file:
+        path: /opt/iptv_proxy
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Copiar docker-compose.yml al destino
+      copy:
+        src: ./docker-compose.yml
+        dest: /opt/iptv_proxy/docker-compose.yml
+        owner: "{{ ansible_user }}"
+        mode: '0644'
+
+    - name: Levantar el stack de contenedores (Docker Compose V2)
+      community.docker.docker_compose_v2:
+        project_src: /opt/iptv_proxy
+        state: present
